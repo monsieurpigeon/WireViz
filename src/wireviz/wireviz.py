@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
 
 from wireviz.Harness import Harness
+from wireviz.wv_helper import expand
 
 
 def parse(yaml_input, file_out=None, generate_bom=False, return_types: (None, str, Tuple[str]) = None):
@@ -30,34 +31,6 @@ def parse(yaml_input, file_out=None, generate_bom=False, return_types: (None, st
     """
 
     yaml_data = yaml.safe_load(yaml_input)
-
-    def expand(yaml_data):
-        # yaml_data can be:
-        # - a singleton (normally str or int)
-        # - a list of str or int
-        # if str is of the format '#-#', it is treated as a range (inclusive) and expanded
-        output = []
-        if not isinstance(yaml_data, list):
-            yaml_data = [yaml_data]
-        for e in yaml_data:
-            e = str(e)
-            if '-' in e:  # list of pins
-                a, b = tuple(map(int, e.split('-')))
-                if a < b:
-                    for x in range(a, b + 1):
-                        output.append(x)
-                elif a > b:
-                    for x in range(a, b - 1, -1):
-                        output.append(x)
-                elif a == b:
-                    output.append(a)
-            else:
-                try:
-                    x = int(e)
-                except Exception:
-                    x = e
-                output.append(x)
-        return output
 
     harness = Harness()
 
