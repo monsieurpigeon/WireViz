@@ -90,108 +90,111 @@ def parse(yaml_input, file_out=None, generate_bom=False, return_types: (None, st
                 yaml_data[sec] = []
 
     # add connections
-    ferrule_counter = 0
-    for connections in yaml_data['connections']:
-        if len(connections) == 3:  # format: connector -- cable -- connector
 
-            for connection in connections:
-                if len(list(connection.keys())) != 1:  # check that each entry in con has only one key, which is the designator
-                    raise Exception('Too many keys')
+    
 
-            from_name = list(connections[0].keys())[0]
-            via_name = list(connections[1].keys())[0]
-            to_name = list(connections[2].keys())[0]
-
-            if not check_designators([from_name, via_name, to_name], ('connectors', 'cables', 'connectors')):
-                print([from_name, via_name, to_name])
-                raise Exception('Bad connection definition (3)')
-
-            from_pins = expand(connections[0][from_name])
-            via_pins = expand(connections[1][via_name])
-            to_pins = expand(connections[2][to_name])
-
-            if len(from_pins) != len(via_pins) or len(via_pins) != len(to_pins):
-                raise Exception('List length mismatch')
-
-            for (from_pin, via_pin, to_pin) in zip(from_pins, via_pins, to_pins):
-                harness.connect(from_name, from_pin, via_name, via_pin, to_name, to_pin)
-
-        elif len(connections) == 2:
-
-            for connection in connections:
-                if type(connection) is dict:
-                    if len(list(connection.keys())) != 1:  # check that each entry in con has only one key, which is the designator
-                        raise Exception('Too many keys')
-
-            # hack to make the format for ferrules compatible with the formats for connectors and cables
-            if type(connections[0]) == str:
-                name = connections[0]
-                connections[0] = {}
-                connections[0][name] = name
-            if type(connections[1]) == str:
-                name = connections[1]
-                connections[1] = {}
-                connections[1][name] = name
-
-            from_name = list(connections[0].keys())[0]
-            to_name = list(connections[1].keys())[0]
-
-            con_cbl = check_designators([from_name, to_name], ('connectors', 'cables'))
-            cbl_con = check_designators([from_name, to_name], ('cables', 'connectors'))
-            con_con = check_designators([from_name, to_name], ('connectors', 'connectors'))
-
-            fer_cbl = check_designators([from_name, to_name], ('ferrules', 'cables'))
-            cbl_fer = check_designators([from_name, to_name], ('cables', 'ferrules'))
-
-            if not con_cbl and not cbl_con and not con_con and not fer_cbl and not cbl_fer:
-                raise Exception('Wrong designators')
-
-            from_pins = expand(connections[0][from_name])
-            to_pins = expand(connections[1][to_name])
-
-            if con_cbl or cbl_con or con_con:
-                if len(from_pins) != len(to_pins):
-                    raise Exception('List length mismatch')
-
-            if con_cbl or cbl_con:
-                for (from_pin, to_pin) in zip(from_pins, to_pins):
-                    if con_cbl:
-                        harness.connect(from_name, from_pin, to_name, to_pin, None, None)
-                    else:  # cbl_con
-                        harness.connect(None, None, from_name, from_pin, to_name, to_pin)
-            elif con_con:
-                cocon_coname = list(connections[0].keys())[0]
-                from_pins = expand(connections[0][from_name])
-                to_pins = expand(connections[1][to_name])
-
-                for (from_pin, to_pin) in zip(from_pins, to_pins):
-                    harness.loop(cocon_coname, from_pin, to_pin)
-            if fer_cbl or cbl_fer:
-                from_pins = expand(connections[0][from_name])
-                to_pins = expand(connections[1][to_name])
-
-                if fer_cbl:
-                    ferrule_name = from_name
-                    cable_name = to_name
-                    cable_pins = to_pins
-                else:
-                    ferrule_name = to_name
-                    cable_name = from_name
-                    cable_pins = from_pins
-
-                ferrule_params = yaml_data['ferrules'][ferrule_name]
-                for cable_pin in cable_pins:
-                    ferrule_counter = ferrule_counter + 1
-                    ferrule_id = f'_F{ferrule_counter}'
-                    harness.add_connector(ferrule_id, category='ferrule', **ferrule_params)
-
-                    if fer_cbl:
-                        harness.connect(ferrule_id, 1, cable_name, cable_pin, None, None)
-                    else:
-                        harness.connect(None, None, cable_name, cable_pin, ferrule_id, 1)
-
-        else:
-            raise Exception('Wrong number of connection parameters')
+    # ferrule_counter = 0
+    # for connections in yaml_data['connections']:
+    #     if len(connections) == 3:  # format: connector -- cable -- connector
+    #
+    #         for connection in connections:
+    #             if len(list(connection.keys())) != 1:  # check that each entry in con has only one key, which is the designator
+    #                 raise Exception('Too many keys')
+    #
+    #         from_name = list(connections[0].keys())[0]
+    #         via_name = list(connections[1].keys())[0]
+    #         to_name = list(connections[2].keys())[0]
+    #
+    #         if not check_designators([from_name, via_name, to_name], ('connectors', 'cables', 'connectors')):
+    #             print([from_name, via_name, to_name])
+    #             raise Exception('Bad connection definition (3)')
+    #
+    #         from_pins = expand(connections[0][from_name])
+    #         via_pins = expand(connections[1][via_name])
+    #         to_pins = expand(connections[2][to_name])
+    #
+    #         if len(from_pins) != len(via_pins) or len(via_pins) != len(to_pins):
+    #             raise Exception('List length mismatch')
+    #
+    #         for (from_pin, via_pin, to_pin) in zip(from_pins, via_pins, to_pins):
+    #             harness.connect(from_name, from_pin, via_name, via_pin, to_name, to_pin)
+    #
+    #     elif len(connections) == 2:
+    #
+    #         for connection in connections:
+    #             if type(connection) is dict:
+    #                 if len(list(connection.keys())) != 1:  # check that each entry in con has only one key, which is the designator
+    #                     raise Exception('Too many keys')
+    #
+    #         # hack to make the format for ferrules compatible with the formats for connectors and cables
+    #         if type(connections[0]) == str:
+    #             name = connections[0]
+    #             connections[0] = {}
+    #             connections[0][name] = name
+    #         if type(connections[1]) == str:
+    #             name = connections[1]
+    #             connections[1] = {}
+    #             connections[1][name] = name
+    #
+    #         from_name = list(connections[0].keys())[0]
+    #         to_name = list(connections[1].keys())[0]
+    #
+    #         con_cbl = check_designators([from_name, to_name], ('connectors', 'cables'))
+    #         cbl_con = check_designators([from_name, to_name], ('cables', 'connectors'))
+    #         con_con = check_designators([from_name, to_name], ('connectors', 'connectors'))
+    #
+    #         fer_cbl = check_designators([from_name, to_name], ('ferrules', 'cables'))
+    #         cbl_fer = check_designators([from_name, to_name], ('cables', 'ferrules'))
+    #
+    #         if not con_cbl and not cbl_con and not con_con and not fer_cbl and not cbl_fer:
+    #             raise Exception('Wrong designators')
+    #
+    #         from_pins = expand(connections[0][from_name])
+    #         to_pins = expand(connections[1][to_name])
+    #
+    #         if con_cbl or cbl_con or con_con:
+    #             if len(from_pins) != len(to_pins):
+    #                 raise Exception('List length mismatch')
+    #
+    #         if con_cbl or cbl_con:
+    #             for (from_pin, to_pin) in zip(from_pins, to_pins):
+    #                 if con_cbl:
+    #                     harness.connect(from_name, from_pin, to_name, to_pin, None, None)
+    #                 else:  # cbl_con
+    #                     harness.connect(None, None, from_name, from_pin, to_name, to_pin)
+    #         elif con_con:
+    #             cocon_coname = list(connections[0].keys())[0]
+    #             from_pins = expand(connections[0][from_name])
+    #             to_pins = expand(connections[1][to_name])
+    #
+    #             for (from_pin, to_pin) in zip(from_pins, to_pins):
+    #                 harness.loop(cocon_coname, from_pin, to_pin)
+    #         if fer_cbl or cbl_fer:
+    #             from_pins = expand(connections[0][from_name])
+    #             to_pins = expand(connections[1][to_name])
+    #
+    #             if fer_cbl:
+    #                 ferrule_name = from_name
+    #                 cable_name = to_name
+    #                 cable_pins = to_pins
+    #             else:
+    #                 ferrule_name = to_name
+    #                 cable_name = from_name
+    #                 cable_pins = from_pins
+    #
+    #             ferrule_params = yaml_data['ferrules'][ferrule_name]
+    #             for cable_pin in cable_pins:
+    #                 ferrule_counter = ferrule_counter + 1
+    #                 ferrule_id = f'_F{ferrule_counter}'
+    #                 harness.add_connector(ferrule_id, category='ferrule', **ferrule_params)
+    #
+    #                 if fer_cbl:
+    #                     harness.connect(ferrule_id, 1, cable_name, cable_pin, None, None)
+    #                 else:
+    #                     harness.connect(None, None, cable_name, cable_pin, ferrule_id, 1)
+    #
+    #     else:
+    #         raise Exception('Wrong number of connection parameters')
 
     if file_out is not None:
         harness.output(filename=file_out, fmt=('png', 'svg'), gen_bom=generate_bom, view=False)
